@@ -28,8 +28,8 @@ def cellPoseModel = 'cyto'
 // the cutoff distance of nucleis for multiple nucleis cells
 def distanceCutoff = 2.0
 // the measurementId to be used as a marker of multiple nucleis cells
-// the cutoff percentage of measurement for the measurementId, 0.9 mean 90%
-def measurementPercentileCutoff = ["cd68: Cytoplasm: Median":0.9, "hist3h2a: Membrane: Mean":0.8]
+// the cutoff percentage of measurement for the measurementId, 0.9 mean 90%, if it is greater than 1, then it will be absolute cutoff value
+def measurementPercentileCutoff = ["cd68: Cytoplasm: Median":180, "hist3h2a: Membrane: Mean":50]
 def cytoChannels = ["CD4", "cd68"]
 def nucleiChannel = "DAPI-01"
 def newDetection = true // true to remove old detections
@@ -192,17 +192,21 @@ def Quartiles(float pos, List<Double> val) {
 // check average measurement signals in cell cytoplam
 def measurement_avgs = [:]
 for(ele in measurementPercentileCutoff) {
-    def measurement = []
-    for(cell in cells){
-        def measurement_mean = cell.measurements.get(ele.key)
-        if(!measurement_mean) {
-           measurement_mean = 0
+    if(ele.value<1){
+        def measurement = []
+        for(cell in cells){
+            def measurement_mean = cell.measurements.get(ele.key)
+            if(!measurement_mean) {
+               measurement_mean = 0
+            }
+            measurement.add(measurement_mean)
         }
-        measurement.add(measurement_mean)
+        //def measurement_avg = measurement.sum()/measurement.size()
+        measurement_avg = Quartiles(ele.value, measurement)
+        println "Cutoff "+ ele.key + "is: "+measurement_avg.toString()
+    }else {
+        measurement_avg = ele.value
     }
-    //def measurement_avg = measurement.sum()/measurement.size()
-    measurement_avg = Quartiles(ele.value, measurement)
-    println "Cutoff "+ ele.key + "is: "+measurement_avg.toString()
     measurement_avgs[ele.key] = measurement_avg
 }
 

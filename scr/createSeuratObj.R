@@ -145,6 +145,7 @@ for(f in fs){
         p <- heatmap(cor, scale = 'none')
         dev.off()
     }
-    
+    expMeta <- data.frame('Object ID'=colnames(pilot), 'Class'=paste0('Cluster', pilot$seurat_clusters))
+    write.csv(expMeta, file.path(pf, paste0(prefix, '.seurat_cluster.scv')), quote = FALSE, row.names = FALSE)
 }
 

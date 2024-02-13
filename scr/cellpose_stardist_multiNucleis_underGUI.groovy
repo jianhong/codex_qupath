@@ -28,11 +28,23 @@ def cellPoseModel = 'cyto'
 // the cutoff distance of nucleis for multiple nucleis cells
 def distanceCutoff = 2.0
 // the measurementId to be used as a marker of multiple nucleis cells
-// the cutoff percentage of measurement for the measurementId, 0.9 mean 90%, if it is greater than 1, then it will be absolute cutoff value
+// the cutoff percentage of measurement for the measurementId, 0.9 mean 90%, if it is no less than 1, then it will be absolute cutoff value
 def measurementPercentileCutoff = ["cd68: Cytoplasm: Median":180, "hist3h2a: Membrane: Mean":50]
 def cytoChannels = ["CD4", "cd68"]
 def nucleiChannel = "DAPI-01"
+// the cellCutoff will be used to filter the cells, leave it as [:] to skip the filter
+// the cutoff percentage of measurement for the measurementId, 0.9 mean 90%, if it is no less than 1, then it will be absolute cutoff value
+def cellCutoff = ["DAPI-01: Nucleus: Median":10]
 def newDetection = true // true to remove old detections
+
+println 'cytoChannels:'
+println cytoChannels
+println 'cell filters:'
+println cellCutoff
+println 'multiple nucleis cells measurement cutoff:'
+println measurementPercentileCutoff
+println 'cell distance cutoff:' + distanceCutoff
+println 'cellPoseModel:' + cellPoseModel
 
 if (newDetection) {
     clearDetections()
@@ -44,7 +56,7 @@ var server = getCurrentServer()
 var pathObjects = QP.getSelectedObjects()
 if (pathObjects.isEmpty()) {
     //createSelectAllObject(true)
-    throw new Exception("can not ge selected object.")
+    throw new Exception("can not get selected object.")
 }
 var cal = server.getPixelCalibration()
 // Extract the cytoplasm channel, rescale, and mix to a new channel
@@ -79,12 +91,12 @@ def cellpose = Cellpose2D.builder( cellPoseModel )
         .pixelSize( .37 )             // Resolution for detection in um
         .channels( "Average channels", nucleiChannel )	      // Select detection channel(s)
         .normalizePercentiles(1,99)
-        .tileSize(512)                  // If your GPU can take it, make larger tiles to process fewer of them.
+        .tileSize(512)                  // If your GPU can take it, make larger tiles to process fewer of them. 
         .cellposeChannels(1,2)         // Need these, otherwise it just sends the one channel. These will be sent directly to --chan and --chan2
         .diameter(0.0)                    // Median object diameter. Set to 0.0 for the `bact_omni` model or for automatic computation
 //        .cellExpansion(5.0)              // Approximate cells based upon nucleus expansion
 //        .measureShape()                // Add shape measurements
-//        .measureIntensity()             // Add cell measurements (in all compartments)
+//        .measureIntensity()             // Add cell measurements (in all compartments)  
         .simplify(0)                   // Simplification 1.6 by default, set to 0 to get the cellpose masks as precisely as possible
         .build()
 
@@ -114,8 +126,8 @@ println("stardist Done!")
 
 // Save stardist detections
 def sdDetection = getDetectionObjects()
-println sdDetection
-println sdDetection.size()
+//println sdDetection
+//println sdDetection.size()
 
 // assign cell names
 sdDetection.eachWithIndex{ cell, x ->
@@ -136,7 +148,7 @@ cytoplasms.each{ cytoplasm ->
     def cell1ExpROI = GeometryTools.geometryToROI(cell1Expansion, plane)
     // get all cells in the expansion region
     cell2candidates = hierarchy.getObjectsForROI(null, cell1ExpROI).findAll{ it.isCell() && it.getName().startsWith('stardistCell')}
-    cell2candidates.each{ nucleus ->
+    cell2candidates.each{ nucleus ->      
         if ( cytoplasm.getROI().contains( nucleus.getROI().getCentroidX() , nucleus.getROI().getCentroidY())){
             newcell = PathObjects.createCellObject(
                 RoiTools.combineROIs(cytoplasm.getROI(), nucleus.getNucleusROI(), RoiTools.CombineOp.ADD),
@@ -148,7 +160,7 @@ cytoplasms.each{ cytoplasm ->
         }
     }
  // add the undetected cells that can not be detected by Cellpose
- println sdDetection.size()
+ //println sdDetection.size()
 sdDetection.each{ nucleus ->
     toRemove.add(nucleus)
     nucleus.setPathClass(getPathClass("SingleNucleiFormStarDist"))
@@ -167,8 +179,8 @@ for ( cell in cells ) {
     ObjectMeasurements.addIntensityMeasurements( server, cell, downsample, measurements, compartments )
     ObjectMeasurements.addCellShapeMeasurements( cell, cal,  shape )
     }
-
-//def cells = getCellObjects()
+    
+// def cells = getCellObjects()
 
 // println cells[0].measurements.get(measurementId)
 // reassign cell names
@@ -197,7 +209,7 @@ for(ele in measurementPercentileCutoff) {
         for(cell in cells){
             def measurement_mean = cell.measurements.get(ele.key)
             if(!measurement_mean) {
-               measurement_mean = 0
+               measurement_mean = 0 
             }
             measurement.add(measurement_mean)
         }
@@ -218,7 +230,7 @@ def checkCellMeasurement(cell, measurement_avgs) {
     for(ele in measurement_avgs) {
         def cell_measurement = cell.measurements.get(ele.key)
         if (!cell_measurement) {
-            return false
+            return false 
         }
         if (cell_measurement<ele.value) {
             return false
@@ -228,11 +240,11 @@ def checkCellMeasurement(cell, measurement_avgs) {
 }
 for (cell in cells) {
     if(checkCellMeasurement(cell, measurement_avgs)) {
-       cell1candidates.add(cell)
+       cell1candidates.add(cell) 
     }
 }
-println "cell candidates are "+cell1candidates.size()
-pSize=0
+println "multinucleis cell candidates are "+cell1candidates.size()
+//pSize=0
 for (int i=0; i<cell1candidates.size(); i++) {
     def cell1 = cell1candidates[i]
     def cell1name = cell1.getName()
@@ -246,10 +258,10 @@ for (int i=0; i<cell1candidates.size(); i++) {
     def cell1ExpROI = GeometryTools.geometryToROI(cell1Expansion, plane)
     // get all cells in the expansion region
     cell2candidates = hierarchy.getObjectsForROI(null, cell1ExpROI).findAll{ it.isCell()}
-    if(pSize<5) {
-        pSize++
-        println 'cell2 candidate size is ' + cell2candidates.size()
-        }
+    //if(pSize<5) {
+    //    pSize++
+    //    println 'cell2 candidate size is ' + cell2candidates.size()
+    //}
     for (int j=0; j<cell2candidates.size(); j++) {
         def cell2 = cell2candidates[j]
         if(cell1.getName()==cell2.getName()) continue
@@ -292,7 +304,7 @@ def multinucleis_names = multinucleis.values().unique(false)
 //println multinucleis_names
 def multinucleiCells = []
 toRemove = []
-println cells.size()
+// println cells.size()
 for(mnname in multinucleis_names) {
     def current_group_cells = []
     multinucleis.each { k, v ->
@@ -321,7 +333,7 @@ for(mnname in multinucleis_names) {
     multinucleiCells.add(multinucleis_cell)
 }
 // println multinucleiCells
-println cells.size()
+// println cells.size()
 
 addObjects(multinucleiCells)
 
@@ -335,6 +347,39 @@ for ( cell in cells ) {
     ObjectMeasurements.addCellShapeMeasurements( cell, cal,  shape )
     }
 println("Measurements Done!")
+
+// filter cells
+println "Filter cells by"
+toRemove = []
+measurement_avgs = [:]
+for(ele in cellCutoff) {
+    if(ele.value<1){
+        def measurement = []
+        for(cell in cells){
+            def measurement_mean = cell.measurements.get(ele.key)
+            if(!measurement_mean) {
+               measurement_mean = 0 
+            }
+            measurement.add(measurement_mean)
+        }
+        //def measurement_avg = measurement.sum()/measurement.size()
+        measurement_avg = Quartiles(ele.value, measurement)
+        println "Cutoff "+ ele.key + "is: "+measurement_avg.toString()
+    }else {
+        measurement_avg = ele.value
+    }
+    measurement_avgs[ele.key] = measurement_avg
+}
+println measurement_avgs
+for ( cell in cells ) {
+    if(!checkCellMeasurement(cell, measurement_avgs)) {
+        //println cell.measurements.get(measurement_avgs.keySet()[0])
+            // remove the cell
+            toRemove.add(cell)
+       }
+}
+println("Removed "+toRemove.size()+" cells")
+removeObjects(toRemove,true)
 
 // Finished!
 fireHierarchyUpdate()

@@ -10,9 +10,13 @@
 # uncomment line 13 and change the folder to the measurements folder
 # for normalization, available method are
 # 'LogNormalize', 'CLR' (centered log ratio), 'RC' (CPM), 'zscore'  
+# Assign nFeatures as a number will select top N features with maximal variance
+# Assign avoid.features as a character vector by the markers will decide to avoid those markers as features for PCA analysis
+# eg avoid.features = c('sox9', 'hist3h2a')
 
 args = commandArgs(trailingOnly=TRUE)
-# args = c(path='path/to/measurementsExport/folder', useValue='Median', normalizationMethod='zscore', nFeatures = 10)
+# args = c(path='path/to/measurementsExport/folder', useValue='Median', normalizationMethod='zscore', nFeatures = 10, avoid.features=NULL)
+
 library(Seurat)
 library(ggplot2)
 library(dittoSeq)
@@ -27,7 +31,7 @@ markerLocations <- c(
     'DAPI.01'='Nucleus',
     'CD163'='Cell',
     'CD127'='Cell',
-    'sox9'='Cell',
+    'sox9'='Nucleus',
     'CD14'='Cell',
     'CD4'='Cell',
     'mpo'='Cell',
@@ -38,7 +42,7 @@ markerLocations <- c(
     'pd1'='Cell',
     'cd8'='Cell',
     'hif1a'='Cell',
-    'ki67'='Cell',
+    'ki67'='Nucleus',
     'cd19'='Cell',
     'cd206'='Cell',
     'znf90'='Cell',
@@ -49,6 +53,15 @@ markerLocations <- c(
     'cd34'='Cell',
     'CD11c'='Cell'
 )
+avoid.features <- NULL
+if(length(args)>4){
+    avoid.features <- args[5]
+    if(length(avoid.features)){
+        stopifnot(all(avoid.features %in% names(markerLocations)))
+    }
+}
+
+
 ## meta data information filter
 metaInfoStartWith <- '^(Nucleus|Cell)'
 
@@ -105,6 +118,10 @@ for(f in fs){
         pilot <- NormalizeData(seu, normalization.method = normalizationMethod)
     }
     pilot <- FindVariableFeatures(pilot, selection.method = "vst", nfeatures = nFeatures)
+    if(length(avoid.features)){
+        pilot$RNA@meta.data$var.features.rank[pilot$RNA@meta.data$var.features %in% avoid.features] <- NA
+        pilot$RNA@meta.data$var.features[pilot$RNA@meta.data$var.features %in% avoid.features] <- NA
+    }
     plot1 <- VariableFeaturePlot(pilot)
     plot2 <- LabelPoints(plot = plot1, 
                          points = VariableFeatures(pilot),

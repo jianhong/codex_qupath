@@ -54,10 +54,8 @@ def read_geojson()
     var reader = new InputStreamReader(new BufferedInputStream(stream))
     var element = gson.fromJson(reader, JsonElement.class);
     
-    var pathObjects = new ArrayList<PathObject>();
     var cells = readCellObject(element, gson);
     // Add measurements
-    cells = getCellObjects()
     for ( cell in cells ) {
         ObjectMeasurements.addIntensityMeasurements( server, cell, downsample, measurements, compartments )
         ObjectMeasurements.addCellShapeMeasurements( cell, cal,  shape )

@@ -7,7 +7,7 @@
 # How to run in command line:
 # Rscript createSeuratObj.R path/to/measurementsExport/folder
 # How to run in Rstudio/R:
-# uncomment line 13 and change the folder to the measurements folder
+# uncomment line 18 and change the folder to the measurements folder
 # for normalization, available method are
 # 'LogNormalize', 'CLR' (centered log ratio), 'RC' (CPM), 'zscore'  
 # Assign nFeatures as a number will select top N features with maximal variance

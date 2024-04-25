@@ -53,6 +53,8 @@ These exported files contain comprehensive information, including cell area, loc
 
 The script `fill_detections.groovy` is employed to duplicate detected cells into `Detections` and `Annotations` objects within `QuPath`. Subsequently, user can establishe the classes in QuPath to assign colors.
 
+Users may want to try different classifier for the cell type detection by reset the [line10-25](https://github.com/jianhong/codex_qupath/blob/main/scr/fill_detections.groovy#L10-L25). Here I set an example for the classifier.
+
 [![Youtube Video](https://img.youtube.com/vi/4F6sQWKDFl4/0.jpg)](https://youtu.be/4F6sQWKDFl4)
 
 ## Credits

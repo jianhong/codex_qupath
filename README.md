@@ -19,15 +19,6 @@ ls codex_qupath/models/stardist
 
 ### Step 1. Cell segmentation
 
-This step will merge the [cellpose](https://www.cellpose.org/) results and [stardist](https://github.com/stardist/stardist) analysis. 
-You need install the [cellpose](https://github.com/BIOP/qupath-extension-cellpose) and [stardist](https://github.com/qupath/qupath-extension-stardist) extension first. Please do not forget to assign the python path for cellpose extension.
-
-Change the [path of `stardistModel` in line 25](https://github.com/jianhong/codex_qupath/blob/main/scr/cellpose_stardist_multiNucleis_underGUI.groovy#L25) of `cellpose_stardist_multiNucleis_underGUI.groovy` to the file path of your `cell_seg_model.pb`.
-
-Select a region in the opened tiff view window (make it small when you are trying the script, once you got best results, increase the region) of `QuPath`.
-
-Run the script `cellpose_stardist_multiNucleis_underGUI.groovy` by click the Run button in Script Editor.
-
 This step involves merging the results from [Cellpose](https://www.cellpose.org/) and [Stardist](https://github.com/stardist/stardist) analyses.
 
 First, you'll need to install the [Cellpose](https://github.com/BIOP/qupath-extension-cellpose) and [Stardist](https://github.com/qupath/qupath-extension-stardist) extensions. Don't forget to set the Python path for the Cellpose extension.

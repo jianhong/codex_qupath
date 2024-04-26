@@ -29,6 +29,8 @@ def readCellObject(JsonElement element, Gson gson) {
         // create new cells by the new cytoplasm and nucleus
         def cellclass = prop.classification.get("name").getAsString();
         def cell = PathObjects.createCellObject(cytoplasm, nucleus, getPathClass(cellclass), null )
+        UUID ID = UUID.fromString(jsonObject.get("id").toString().replaceAll("\"", ""))
+        cell.setID(ID)
         cells.add(cell)
     }
     return cells;

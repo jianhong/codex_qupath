@@ -37,19 +37,30 @@ def cellObjects = getCellObjects()
 exportObjectsToGeoJson(cellObjects, path, "FEATURE_COLLECTION")
 
 def csvpath = outputPath+".tsv"
-def header = ['Cell.ID', 'Cell.classification', 'Cell.X', 'Cell.Y'] + cellObjects[0].getMeasurements().keySet()
+def header_keys = cellObjects[0].getMeasurements().keySet()
+def header = ['Cell.ID', 'Cell.classification', 'Cell.X', 'Cell.Y'] + header_keys
 def outcsv = new File(csvpath)
 
 outcsv.withWriter {
    out ->
        out.writeLine header.join('\t')
-       cellObjects.forEach {
-           val = [it.getID(),
-           it.getClassifications()[0],
-           it.getROI().getCentroidX(),
-           it.getROI().getCentroidY()] + it.getMeasurements().values()
-           out.writeLine val.join('\t')
+       cellObjects.forEach { cell ->
+           def m = cell.getMeasurements()
+           def mVal = []
+           header_keys.forEach { key ->
+               if(m[key]) {
+                   mVal.add(m[key])
+               }else {
+                  mVal.add(0) 
+               }
            }
+           def val = [
+               cell.getID(),
+               cell.getClassifications()[0],
+               cell.getROI().getCentroidX(),
+               cell.getROI().getCentroidY()] + mVal
+           out.writeLine val.join('\t')
+       }
 }
 
 println('Export cell information Done!')

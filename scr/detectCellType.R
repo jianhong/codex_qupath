@@ -14,6 +14,8 @@ args = commandArgs(trailingOnly=TRUE)
 
 library(Seurat)
 library(mclust)
+library(MASS)
+library(rescale2)
 
 classifier <- c(
     "M1 Macrophage"              = 'cd68',
@@ -36,10 +38,32 @@ pilot <- readRDS(args[1])
 
 dat <- GetAssayData(pilot, assay = 'RNA', layer = 'counts')
 dat <- apply(dat, 1, function(marker){
-    id <- order(marker) 
-    dens <- densityMclust(marker[id], plot = FALSE, verbose = FALSE)
-    cdf <- cdfMclust(dens, data=marker[id])
-    cdf$y[match(marker, marker[id])]
+    id <- order(marker)
+    tryCatch(
+        {
+            dens <- densityMclust(
+                marker[id], plot = FALSE, verbose = FALSE)
+            cdf <- cdfMclust(dens, data=marker[id])
+            y <- cdf$y[match(marker, marker[id])]
+        }, error=function(.e){
+            warning(.e,
+                    ' Data may lack of variance.',
+                    ' Trying log normal distribution rescale methods.')
+            x <- marker[id][marker[id]>0]
+            dens <- fitdistr(x,
+                             densfun = 'log-normal')
+            n <- table(log(x))
+            names(n) <- unique(sort(x))
+            p = cumsum(n)/sum(n)
+            cdf <- plnorm(p,
+                          meanlog = dens$estimate['meanlog'],
+                          sdlog = dens$estimate['sdlog'])
+            cdf <- cdf/max(cdf)
+            cdf <- c('0'=0, cdf)
+            y <- cdf[match(marker, as.numeric(names(cdf)))]
+        }
+    )
+    y
 }, simplify = FALSE)
 dat <- do.call(rbind, dat)
 colnames(dat) <- colnames(pilot)
@@ -64,5 +88,7 @@ stopifnot(identical(colnames(pilot), names(ct)))
 write.csv(ct, file.path(dirname(args[1]), 'celltype.csv'))
 pilot$celltype <- ct
 saveRDS(pilot, sub('.rds$', '.withCellType.rds', args[1]))
+DimPlot(pilot, group.by = 'celltype')
+DimPlot(pilot, group.by = 'celltype', reduction = 'pos')
 
 

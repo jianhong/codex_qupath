@@ -22,7 +22,7 @@ var downsample = 1.0
 
 def expandPixels= 200
 // change the modelPath by the filepath of your stardist model
-stardistModel = '../models/stardist/stardist_cell_seg_model.pb'
+def stardistModel = '../models/stardist/stardist_cell_seg_model.pb'
 // cellpose model
 def cellPoseModel = 'cyto'
 // the cutoff distance of nucleis for multiple nucleis cells
@@ -45,6 +45,10 @@ println 'multiple nucleis cells measurement cutoff:'
 println measurementPercentileCutoff
 println 'cell distance cutoff:' + distanceCutoff
 println 'cellPoseModel:' + cellPoseModel
+println 'stardistModel:' + stardistModel
+if(!new File(stardistModel).exists()) {
+   throw new Exception("stardistModel is not exists!") 
+}
 
 if (newDetection) {
     clearDetections()

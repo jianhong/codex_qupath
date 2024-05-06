@@ -39,12 +39,12 @@ pilot <- readRDS(args[1])
 dat <- GetAssayData(pilot, assay = 'RNA', layer = 'counts')
 dat <- apply(dat, 1, function(marker){
     id <- order(marker)
-    tryCatch(
+    y <- tryCatch(
         {
             dens <- densityMclust(
                 marker[id], plot = FALSE, verbose = FALSE)
             cdf <- cdfMclust(dens, data=marker[id])
-            y <- cdf$y[match(marker, marker[id])]
+            cdf$y[match(marker, marker[id])]
         }, error=function(.e){
             warning(.e,
                     ' Data may lack of variance.',
@@ -60,7 +60,7 @@ dat <- apply(dat, 1, function(marker){
                           sdlog = dens$estimate['sdlog'])
             cdf <- cdf/max(cdf)
             cdf <- c('0'=0, cdf)
-            y <- cdf[match(marker, as.numeric(names(cdf)))]
+            cdf[match(marker, as.numeric(names(cdf)))]
         }
     )
     y
